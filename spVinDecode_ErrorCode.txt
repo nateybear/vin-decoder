@@ -1,0 +1,205 @@
+
+CREATE procedure [dbo].[spVinDecode_ErrorCode] 
+	@vin varchar(50), 
+	@modelYear int,
+	@Decodingitem [tblDecodingItem] readonly,
+	@ReturnCode varchar(100) OUTPUT,
+	@CorrectedVIN varchar(17) OUTPUT, 
+	@ErrorBytes varchar(500) OUTPUT,
+	@UnUsedPositions varchar(500) OUTPUT
+as
+begin
+
+
+
+
+	select @CorrectedVIN = '', @ErrorBytes = '', @ReturnCode = ''
+
+	set @vin = LTRIM(RTRIM(@vin))
+	
+	declare @wmi varchar(6) = dbo.fVinWMI(@vin)
+	declare @corrected varchar (17) = '', @possibilities varchar(50) = '', @replacements varchar(2000) = '', @x varchar(50)
+	declare @i int = 3, @n int = 14, @c char(1), @cntTotal int, @cntMatch int, @r varchar(50), @cntErrors int = 0
+	declare @lastErrorPos int = 0, @lastReplacements varchar(50) 
+
+	if LEN(@wmi) < 3
+	begin
+		
+		select @ReturnCode = @ReturnCode + ' 6 '
+		return
+	end
+
+	declare @tmp [tblPosChar] 
+
+	INSERT @tmp (p, c)
+	select distinct position, [char] 
+	from WMIYearValidChars with (nolock) 
+	where wmi = @wmi and year = @modelYear 
+		and @wmi not in (select distinct wmi from WMIYearValidChars_CacheExceptions)
+	order by position, [char]
+
+	if(@@ROWCOUNT = 0)
+	begin
+		INSERT @tmp (p, c)
+		select distinct p , c from dbo.fExtractValidCharsPerWmiYear (@wmi, @modelYear) order by p, c
+	end
+
+	if LEN(@wmi) = 6
+		set @n = 11
+
+	while (@i < @n) and (@i < len(@vin))
+	begin
+		set @i = @i + 1
+		set @c = SUBSTRING(@vin, @i, 1)
+
+		if @i = 9 or @i = 10 
+		begin
+			set @r = @c
+			
+		end
+		else
+		begin
+			select @cntTotal = COUNT(*) from @tmp where p = @i
+			select @cntMatch = COUNT(*) from @tmp where p = @i and c = @c
+			
+			if @cntTotal > 0
+			begin
+				
+				if @cntMatch > 0
+				begin
+					
+					set @r = @c
+				end
+				else
+				begin 
+					
+					set @r = '!'
+					set @x = ''
+					select @x = @x + c from @tmp where p=@i order by c
+					set @replacements = @replacements + '(' + CAST(@i as varchar) + ':' + @x +')'
+					set @cntErrors = @cntErrors + 1
+					set @lastErrorPos = @i
+					set @lastReplacements = @x
+				end
+			end
+			else
+			begin
+				
+					set @r = @c 
+				
+				
+			end 
+		end
+		set @corrected = @corrected + @r
+	end
+
+	if len(@wmi) = 3
+		set @corrected = @wmi + @corrected
+	else
+		set @corrected = left(@wmi, 3) + @corrected + RIGHT(@wmi, 3)
+
+	if LEN(@vin) > LEN(@corrected)
+		set @corrected = @corrected + SUBSTRING(@vin, LEN(@corrected)+1, 3)
+
+	IF @cntErrors = 1 
+	begin
+		
+
+		if len(@lastReplacements) = 1
+		begin
+			
+			set @corrected = substring(@vin, 1, @lastErrorPos-1) + @lastReplacements + substring(@vin, @lastErrorPos+1, 17-@lastErrorPos) 
+			select @ReturnCode = @ReturnCode + ' 2 ', @CorrectedVin = @Corrected, @ErrorBytes = @replacements
+		end
+		else
+		begin
+			declare @tmpVin varchar(17), @goodReplacements int = 0, @NewReplacements varchar(50) = '', @Corrected1 varchar(17)
+			
+			set @i = 0
+			while @i<len(@lastReplacements)
+			begin
+				set @i = @i + 1
+				
+				set @c = SUBSTRING(@lastReplacements, @i, 1) 
+				set @tmpVin = substring(@vin, 1, @lastErrorPos-1) + @c + substring(@vin, @lastErrorPos+1, 17-@lastErrorPos) 
+				if SUBSTRING(@tmpVin, 9, 1) = dbo.[fVINCheckDigit](@tmpVin) 
+				begin
+					set @goodReplacements = @goodReplacements + 1
+					set @NewReplacements = @NewReplacements + @c
+					set @Corrected1 = @tmpVin
+				end
+				
+			end
+
+			if @goodReplacements = 1
+			begin
+				
+				select @ReturnCode = @ReturnCode + ' 3 ', @CorrectedVin = @Corrected1, @ErrorBytes = '(' + CAST(@lastErrorPos as varchar) + ':' + @NewReplacements +')'
+			end 
+			else
+			begin
+				
+				select @ReturnCode = @ReturnCode + ' 4 ', @CorrectedVin = @Corrected, @ErrorBytes = '(' + CAST(@lastErrorPos as varchar) + ':' + @lastReplacements +')'
+			end
+		end
+	end
+
+	IF @cntErrors > 1 
+	begin
+		
+		select @ReturnCode = @ReturnCode + ' 5 ' , @CorrectedVin = @Corrected, @ErrorBytes = @replacements
+	end
+	
+	
+
+	declare @tmp1 [tblPosChar] 
+
+	declare @Y tblPosChar 
+
+	declare @chr char(1), @key varchar(100), @b bit = 0, @unUsedPos varchar(100) = ''
+	
+	set @i = (select min (id) from @decodingitem)
+	while @i <= (select max (id) from @decodingitem)
+	begin
+		select @key = null
+		select @key = keys from @decodingitem where id = @i and source like '%pattern%'
+		if isnull(@key, '') <> ''
+		begin
+			insert into @tmp1 select * from dbo.fValidCharsInKey (@key) where chr <> '|'
+		end
+		set @i = @i + 1
+	end
+	
+	insert into @y select distinct * from @tmp1 
+	
+	set @i = 3
+	declare @ubound int = 11 
+	if len (@vin) < @ubound
+		set @ubound = len (@vin)
+
+	while @i < @ubound
+	begin
+		set @i = @i + 1
+		
+		if not @i in (4, 5, 6, 7, 8, 11) 
+			continue
+
+		set @chr = SUBSTRING(@vin, @i, 1)
+		set @b = 0
+		if exists(select c from @y where p +3 = @i and c = @chr)
+			set @b = 1
+		if @b = 0
+			set @unUsedPos = @unUsedPos + ' ' + cast(@i as varchar) 
+		
+	end
+	
+
+	set @unUsedPos = replace(ltrim(rtrim(@unUsedPos)), ' ', ',')
+	
+	IF @unUsedPos <> '' 
+	begin
+		
+		select @ReturnCode = @ReturnCode + ' 14 ' , @UnUsedPositions = @unUsedPos 
+	end
+
+end

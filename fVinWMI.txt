@@ -1,0 +1,37 @@
+CREATE function [dbo].[fVinWMI] (
+
+        @vin varchar(50)
+
+)
+
+returns varchar(6)
+
+as
+
+Begin
+
+        declare @wmi varchar(6)
+
+
+
+        if LEN(@vin) > 3
+
+                set @wmi = LEFT(@vin, 3)
+
+        else
+
+                set @wmi = @vin
+
+
+
+        if SUBSTRING(@wmi, 3,1) = '9' and LEN(@vin) >= 14
+
+                set @wmi = @wmi + substring(@vin, 12, 3)
+
+
+
+        return @wmi
+
+
+
+end

@@ -1,0 +1,33 @@
+CREATE function [dbo].[fVinDescriptor]
+
+(
+
+        @vin varchar(17)
+
+)
+
+RETURNS varchar(17)
+
+AS
+
+BEGIN
+
+        DECLARE @vehicleDescriptor varchar(17)
+
+        set @vin = left(ltrim(rtrim(@VIN)) + '*****************', 17)
+
+        set @vin = STUFF(@vin, 9, 1, '*')
+
+
+
+        set @vehicleDescriptor = left(@vin, 11)
+
+        if SUBSTRING(@VIN, 3, 1) = '9'
+
+                set @vehicleDescriptor = left(@vin, 14)
+
+
+
+        return upper(@vehicleDescriptor)
+
+end

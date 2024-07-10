@@ -1,0 +1,150 @@
+
+CREATE function [dbo].[fVinModelYear2] (
+
+        @vin varchar(50)
+
+)
+
+returns int
+
+as
+
+Begin
+
+
+
+        declare @pos10 char(10), @modelYear int = null
+
+        declare @conclusive bit = 0
+
+
+
+        set @vin = upper(@vin)
+
+        if LEN(@vin) >= 10
+
+        begin
+
+
+
+                select @pos10 = substring(@vin, 10, 1)
+
+
+
+                if @pos10 like '[A-H]'
+
+                        set @modelYear = 2010 + ascii(@pos10) - ASCII('A')
+
+                if @pos10 like '[J-N]'
+
+                        set @modelYear = 2010 + ascii(@pos10) - ASCII('A') -1
+
+                if @pos10 = 'P'
+
+                        set @modelYear = 2023
+
+                if @pos10 like '[R-T]'
+
+                        set @modelYear = 2010 + ascii(@pos10) - ASCII('A') -3
+
+                if @pos10 like '[V-Y]'
+
+                        set @modelYear = 2010 + ascii(@pos10) - ASCII('A') -4
+
+                if @pos10 like '[1-9]'
+
+                        set @modelYear = 2031 + ascii(@pos10) - ASCII('1')
+
+
+
+                if not (@modelYear is null)
+
+                begin
+
+
+
+
+
+
+
+
+
+
+
+                        declare @wmi varchar(6) = null, @vehicleTypeId int = null, @truckTypeId int = null
+
+                        set @wmi = dbo.fVinWMI(@vin)
+
+                        if not (@wmi is null)
+
+                        begin
+
+                                select @vehicleTypeId = vehicleTypeId, @truckTypeId = truckTypeId from wmi where wmi = @w
+
+
+
+                                declare @carLT int = 0
+
+                                if @vehicleTypeId in (2, 7) or (@vehicleTypeId = 3 and @truckTypeId = 1)
+
+                                        set @carLT = 1
+
+
+
+                                IF (@carLT = 1) and (substring(@vin, 7, 1) like '[0-9]')
+
+                                begin
+
+                                        set @modelYear = @modelYear - 30
+
+                                        set @conclusive = 1
+
+                                end
+
+                                IF (@carLT = 1) and (substring(@vin, 7, 1) like '[A-Z]')
+
+                                begin
+
+
+
+                                        set @conclusive = 1
+
+                                end
+
+                        end
+
+
+
+
+
+                        if @modelYear > datepart(year, dateadd(year, 1, getdate()))
+
+                        begin
+
+                                set @modelYear = @modelYear - 30
+
+                                set @conclusive = 1
+
+                        end
+
+
+
+                end
+
+
+
+        end
+
+
+
+        if @conclusive <> 1
+
+                set @modelYear = - @modelYear
+
+
+
+        return @modelYear
+
+
+
+end
