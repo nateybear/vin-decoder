@@ -1,29 +1,27 @@
-use axum::extract::{Path, State};
+use axum::extract::{Json, Path, State};
 use futures::stream::{FuturesOrdered, StreamExt};
 use sqlx::PgPool;
 use std::sync::Arc;
 use tracing::{instrument, warn};
 
-use crate::{sp_vin_decode, types::*, error::AppError};
+use crate::{error::AppError, sp_vin_decode, types::*};
 
 #[instrument(skip_all)]
 pub(crate) async fn vin_lookup(
     State(pool): State<Arc<PgPool>>,
     Path(vin): Path<String>,
-) -> Result<String, AppError> {
+) -> Result<Json<Vec<DecodingOutput>>, AppError> {
     let mut conn = pool.acquire().await?;
     let vin: &str = &vin;
 
-    Ok(serde_json::to_string(
-        &sp_vin_decode(vin.into(), &mut conn).await?,
-    )?)
+    Ok(Json(sp_vin_decode(vin.into(), &mut conn).await?))
 }
 
 #[instrument(skip_all)]
 pub(crate) async fn vin_lookup_batch(
     State(pool): State<Arc<PgPool>>,
     body: String,
-) -> Result<String, AppError> {
+) -> Result<Json<DecodingBatchResults>, AppError> {
     let vins: Vec<_> = body.lines().collect();
 
     let mut query_out = FuturesOrdered::new();
@@ -54,7 +52,5 @@ pub(crate) async fn vin_lookup_batch(
         })
         .collect::<Vec<DecodingBatchOutput>>();
 
-    let results = DecodingBatchResults { successes, errors };
-
-    Ok(serde_json::to_string(&results)?)
+    Ok(Json(DecodingBatchResults { successes, errors }))
 }
