@@ -1,7 +1,8 @@
 use crate::{
-    decoding_item::{DecodingItem, DecodingOutput},
     element_attribute_value::element_attribute_value,
-    sp_vin_decode_core::{sp_vin_decode_core, SpVinDecodeCoreArgs},
+    sp_vin_decode_core::sp_vin_decode_core,
+    types::{DecodingItem, DecodingOutput},
+    types::{SpVinDecodeArgs, SpVinDecodeCoreArgs},
     vin_descriptor,
     vin_model_year::vin_model_year,
 };
@@ -10,26 +11,6 @@ use chrono::{Datelike, Utc};
 use lazy_static::lazy_static;
 use regex::Regex;
 use sqlx::{query, PgConnection};
-
-pub struct SpVinDecodeArgs<'a> {
-    pub v: &'a str,
-    pub include_private: Option<bool>,
-    pub year: Option<u8>,
-    pub include_all: Option<bool>,
-    pub no_output: Option<bool>,
-}
-
-impl<'a> From<&'a str> for SpVinDecodeArgs<'a> {
-    fn from(v: &'a str) -> Self {
-        Self {
-            v,
-            include_private: None,
-            year: None,
-            include_all: None,
-            no_output: None,
-        }
-    }
-}
 
 lazy_static! {
     static ref MODEL_YEAR: i32 = Utc::now().year() + 1;
@@ -152,7 +133,7 @@ pub async fn sp_vin_decode(
         } = decodings
             .iter()
             .find(|d| d.element_id == x.element_id)
-            .map(|d| d.clone())
+            .cloned()
             .unwrap_or(DecodingItem::default());
 
         DecodingOutput {

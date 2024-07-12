@@ -1,18 +1,9 @@
+use crate::types::{DecodingItem, SpVinDecodeCoreArgs};
 use crate::vin_wmi::vin_wmi;
-use crate::DecodingItem;
 use anyhow::{anyhow, Result};
 use itertools::Itertools;
 use regex::Regex;
 use sqlx::{query, query_as, PgConnection};
-
-pub struct SpVinDecodeCoreArgs<'a> {
-    pub pass: i32,
-    pub vin: &'a str,
-    pub model_year: Option<i32>,
-    pub model_year_source: Option<&'a str>,
-    pub include_private: Option<bool>,
-    pub include_not_publicly_available: Option<bool>,
-}
 
 pub async fn sp_vin_decode_core(
     SpVinDecodeCoreArgs {
@@ -393,10 +384,8 @@ pub async fn sp_vin_decode_core(
      */
     let vehicle_type = decodings
         .iter()
-        .filter(|x| x.decoding_id == Some(pass) && x.element_id == Some(39))
-        .next()
-        .map(|x| x.attribute_id)
-        .flatten();
+        .find(|x| x.decoding_id == Some(pass) && x.element_id == Some(39))
+        .and_then(|x| x.attribute_id);
 
     if let Some(vt) = vehicle_type {
         tracing::debug!("vt: {:?}", vt);

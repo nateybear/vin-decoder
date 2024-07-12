@@ -1,25 +1,30 @@
-use std::env::{self, args};
+use std::{env, sync::Arc};
 
+use axum::{
+    routing::{get, post},
+    serve, Router,
+};
 use dotenvy::dotenv_override;
 
-use futures::task::waker;
 use sqlx::{
     postgres::{PgConnectOptions, PgPoolOptions},
     PgPool,
 };
 
-use tracing::warn;
+use tracing_subscriber::{filter::EnvFilter, fmt};
+
+use tokio::net::TcpListener;
+use tracing::{info, warn};
 
 use anyhow::{Context, Result};
-use vin_wmi::vin_wmi;
 
 use std::time::Duration;
 
-use csv::Writer;
-
-mod decoding_item;
-use decoding_item::DecodingItem;
 mod element_attribute_value;
+mod error;
+mod handlers;
+mod types;
+use handlers::*;
 mod sp_vin_decode;
 use sp_vin_decode::sp_vin_decode;
 mod sp_vin_decode_core;
@@ -34,9 +39,12 @@ async fn build_pool() -> Result<PgPool> {
         .parse()
         .context("Failed to parse POOL_SIZE environment variable")?;
     let options = PgConnectOptions::new(); // read config from environment!
+
+    info!("Connecting to database with {} connections and configuration:\n\n{:?}\n", pool_size, options);
+
     let pool = PgPoolOptions::new()
         .max_connections(pool_size)
-        .acquire_timeout(Duration::from_secs(60 * 60 * 24)) // your batch request will die after 24 hours
+        .acquire_timeout(Duration::from_secs(60)) // your batch request will die after 1 minute
         .connect_with(options)
         .await
         .context("Failed to connect to postgres database")?;
@@ -52,19 +60,24 @@ fn load_env() {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    fmt()
+        .with_env_filter(EnvFilter::from_default_env())
+        .pretty()
+        .with_thread_ids(true)
+        .init();
+
     load_env();
-    let vin: &str = &args().nth(1).unwrap_or("1N4BZ0CP6HC303730".to_string());
-    tracing::debug!("VIN: {}", vin);
     let pool = build_pool().await?;
-    tracing::debug!("{}", vin_descriptor(vin));
-    tracing::debug!("{}", vin_wmi(vin));
-    let mut conn = pool.acquire().await?;
-    let mut wtr = Writer::from_writer(std::io::stdout());
-    
-    for r in sp_vin_decode(vin.into(), &mut conn).await? {
-        wtr.serialize(r)?;
-    }
-    wtr.flush()?;
+
+    let app = Router::new()
+        .route("/decode/batch", post(vin_lookup_batch))
+        .route("/decode/:vin", get(vin_lookup))
+        .with_state(Arc::new(pool));
+
+    info!("Binding to port 8080 and listening");
+    let listener = TcpListener::bind("0.0.0.0:8080").await.unwrap();
+
+    serve(listener, app).await.unwrap();
 
     Ok(())
 }

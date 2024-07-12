@@ -25,7 +25,7 @@ pub fn vin_model_year(vin: &str) -> Option<i32> {
     }
 }
 
-fn offset_from<'a>(my: &'a str, val: char) -> Option<i32> {
+fn offset_from(my: &str, val: char) -> Option<i32> {
     let val: i32 = u32::from(val).try_into().ok()?;
     let my: i32 = (*my.as_bytes().first()?).into();
     Some(my - val)
