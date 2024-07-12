@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select model_year from vin_descriptor where descriptor = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "model_year",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "e13c92bb1756d9795124ef5835749e90eda2ef352efaf2797c9a71cb9bcaa793"
+}

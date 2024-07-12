@@ -1,0 +1,41 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select\n                coalesce(w.updated_on, w.created_on) as created_on,\n                w.id as wmi_id,\n                t.id as attribute_id,\n                upper(t.name) as value\n            from\n                wmi w\n                join wmi__make wm on wm.wmi_id = w.id\n                join make t on t.id = wm.make_id\n            where\n                wmi = $1\n                and ($2 or w.public_availability_date <= current_timestamp)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "created_on",
+        "type_info": "Timestamp"
+      },
+      {
+        "ordinal": 1,
+        "name": "wmi_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "attribute_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "value",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      null,
+      true,
+      true,
+      null
+    ]
+  },
+  "hash": "f278655ce42f3b344660da064d2fb51035924c776b6908ffd4abbd211e985780"
+}

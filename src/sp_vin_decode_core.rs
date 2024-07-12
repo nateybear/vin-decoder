@@ -1,8 +1,7 @@
 use crate::vin_wmi::vin_wmi;
+use crate::DecodingItem;
 use anyhow::{anyhow, Result};
-use chrono::NaiveDateTime;
 use itertools::Itertools;
-use optfield::optfield;
 use regex::Regex;
 use sqlx::{query, query_as, PgConnection};
 
@@ -15,23 +14,6 @@ pub struct SpVinDecodeCoreArgs<'a> {
     pub include_not_publicly_available: Option<bool>,
 }
 
-#[optfield(pub(crate) DecodingItem, attrs, merge_fn)]
-#[derive(Clone, Debug, Default)]
-struct DecodingItemRaw {
-    pub decoding_id: i32,
-    pub source: String,
-    pub created_on: NaiveDateTime,
-    pub priority: i32,
-    pub pattern_id: i32,
-    pub keys: String,
-    pub vin_schema_id: i32,
-    pub wmi_id: i32,
-    pub element_id: i32,
-    pub attribute_id: i32,
-    pub value: String,
-    pub tobe_q_ced: bool,
-}
-
 pub async fn sp_vin_decode_core(
     SpVinDecodeCoreArgs {
         pass,
@@ -41,30 +23,34 @@ pub async fn sp_vin_decode_core(
         include_private,
         include_not_publicly_available,
     }: SpVinDecodeCoreArgs<'_>,
-    mut conn: PgConnection,
+    conn: &mut PgConnection,
 ) -> Result<Vec<DecodingItem>> {
+    tracing::debug!("model year: {:?}", model_year);
     let wmi = vin_wmi(vin);
+    tracing::debug!("wmi: {:?}", wmi);
     let keys = match vin {
         v if v.len() > 9 => v[3..8].to_string() + "|" + &v[9..17],
         v if v.len() > 3 => v[3..8].to_string(),
         _ => "".to_string(),
     };
+    tracing::debug!("keys: {:?}", keys);
 
     let wmi_id = query!(
         "select id from wmi where wmi = $1 and ($2 or public_availability_date <= current_timestamp)", 
         wmi,
         include_not_publicly_available
     )
-        .fetch_optional(&mut conn)
+        .fetch_optional(&mut *conn)
         .await?
         .and_then(|x| x.id)
-        .ok_or(anyhow!("Could not decode WMI"))?;
+        .ok_or(anyhow!("Could not decode manufacturer from WMI index"))?;
 
     let mut decodings = Vec::<DecodingItem>::new();
+
     macro_rules! insert_decodings {
         ($query: expr, $($args: tt)*) => {
             query_as!(DecodingItem, $query, $($args)*)
-                .fetch_all(&mut conn)
+                .fetch_all(&mut *conn)
                 .await?
                 .into_iter()
                 .for_each(|x| decodings.push(x));
@@ -83,29 +69,28 @@ pub async fn sp_vin_decode_core(
             wvs.wmi_id,
             p.element_id,
             p.attribute_id,
-            'XXX' as value,
-            vs.tobe_q_ced
+            'XXX' as value
         from
             pattern p
             join element e on p.element_id = e.id
             join vin_schema vs on p.vin_schema_id = vs.id
             join wmi__vin_schema wvs on 
-                vs.id = wvs.vin_schema_id and 
-                ($2::integer is null or $2::integer between wvs.year_from and coalesce(wvs.year_to, 2999))
-            join wmi w on wvs.wmi_id = w.id and w.wmi = $3
+                vs.id = wvs.vin_schema_id
+                and ($6::integer is null or $6 between wvs.year_from and coalesce(wvs.year_to, 2999))
+            join wmi w on wvs.wmi_id = w.id and w.wmi = $2
         where
-            $4 like concat(replace(p.keys, '*', '_'), '%')
+            $3 similar to concat(replace(p.keys, '*', '_'), '%')
             and not p.element_id in (26, 27, 29, 39)
             and e.decode is not null
-            and (coalesce(e.is_private, 0) = 0 or $5)
-            and ($6 or w.public_availability_date <= current_timestamp)
-            and ($6 or coalesce(vs.tobe_q_ced, true))",
+            and (coalesce(e.is_private, 0) = 0 or $4)
+            and ($5 or w.public_availability_date <= current_timestamp)
+            and ($5 or coalesce(vs.tobe_q_ced, true))",
         pass,
-        model_year,
         wmi,
         keys,
         include_private,
-        include_not_publicly_available
+        include_not_publicly_available,
+        model_year
     );
 
     /*
@@ -132,8 +117,7 @@ pub async fn sp_vin_decode_core(
                 $5::integer as wmi_id,
                 p.element_id,
                 p.attribute_id,
-                'XXX' as value,
-                NULL::bool as tobe_q_ced
+                'XXX' as value
             from
                 engine_model em
                 join engine_model_pattern p on em.id = p.engine_model_id
@@ -166,8 +150,7 @@ pub async fn sp_vin_decode_core(
             w.id as wmi_id,
             39 as element_id,
             t.id as attribute_id,
-            upper(t.name) as value,
-            NULL::bool as tobe_q_ced
+            upper(t.name) as value
         from
             wmi w
             join vehicle_type t on t.id = w.vehicle_type_id
@@ -198,7 +181,7 @@ pub async fn sp_vin_decode_core(
         wmi,
         include_not_publicly_available
     )
-    .fetch_optional(&mut conn)
+    .fetch_optional(&mut *conn)
     .await?
     .map_or((None, None), |x| (x.id, x.name));
 
@@ -211,10 +194,9 @@ pub async fn sp_vin_decode_core(
         keys: Some(wmi.to_uppercase()),
         vin_schema_id: None,
         wmi_id: Some(wmi_id),
-        element_id: Some(157),
+        element_id: Some(27),
         attribute_id: mfr_id,
         value: mfr_name,
-        tobe_q_ced: None,
     };
 
     decodings.push(mfr_item.clone());
@@ -222,6 +204,7 @@ pub async fn sp_vin_decode_core(
     decodings.push(DecodingItem {
         source: Some("Manuf. Id".to_string()),
         value: mfr_id.map(|x| x.to_string()),
+        element_id: Some(157),
         ..mfr_item
     });
 
@@ -238,7 +221,6 @@ pub async fn sp_vin_decode_core(
             element_id: Some(29),
             attribute_id: Some(model_year),
             value: Some(model_year.to_string()),
-            tobe_q_ced: None,
         });
     }
 
@@ -255,8 +237,7 @@ pub async fn sp_vin_decode_core(
             NULL::integer as wmi_id,
             p.element_id,
             p.attribute_id,
-            substring($2, position('#' in p.keys), ((length(p.keys) - position('#' in reverse(p.keys)) + 1) - (position('#' in p.keys)) + 1))::text as value,
-            NULL::bool as tobe_q_ced
+            substring($2, position('#' in p.keys), ((length(p.keys) - position('#' in reverse(p.keys)) + 1) - (position('#' in p.keys)) + 1))::text as value
         from
             pattern p
             join element e on p.element_id = e.id
@@ -274,7 +255,7 @@ pub async fn sp_vin_decode_core(
             )
             and position('#' in p.keys) > 0
             and p.element_id not in (26, 27, 29, 39)
-            and $6 like concat(replace(p.keys, '*', '_'), '%')",
+            and $6 similar to concat(replace(p.keys, '*', '_'), '%')",
         pass,
         keys,
         model_year,
@@ -341,7 +322,7 @@ pub async fn sp_vin_decode_core(
                 mm.model_id = $1",
             mid.attribute_id
         )
-        .fetch_all(&mut conn)
+        .fetch_all(&mut *conn)
         .await?
         .into_iter()
         .for_each(|mm| {
@@ -358,7 +339,6 @@ pub async fn sp_vin_decode_core(
                 element_id: Some(26),
                 attribute_id: mm.attribute_id,
                 value: mm.value,
-                tobe_q_ced: None,
             });
         });
     } else {
@@ -378,7 +358,7 @@ pub async fn sp_vin_decode_core(
             wmi,
             include_not_publicly_available
         )
-        .fetch_all(&mut conn)
+        .fetch_all(&mut *conn)
         .await?;
 
         if let Ok(Some(mm)) = matched_make.into_iter().at_most_one() {
@@ -394,7 +374,6 @@ pub async fn sp_vin_decode_core(
                 element_id: Some(26),
                 attribute_id: mm.attribute_id,
                 value: mm.value,
-                tobe_q_ced: None,
             });
         }
     }
@@ -416,9 +395,11 @@ pub async fn sp_vin_decode_core(
         .iter()
         .filter(|x| x.decoding_id == Some(pass) && x.element_id == Some(39))
         .next()
-        .map(|x| x.attribute_id);
+        .map(|x| x.attribute_id)
+        .flatten();
 
     if let Some(vt) = vehicle_type {
+        tracing::debug!("vt: {:?}", vt);
         let mut temp_patterns = query!(
             "select distinct sp.id, s.tobe_q_ced
          from vehicle_spec_schema s
@@ -437,13 +418,11 @@ pub async fn sp_vin_decode_core(
                 and ($5 or (coalesce(s.tobe_q_ced, true)))",
             wmi,
             vt,
-            model_id
-                .ok_or(anyhow!("No model information found"))?
-                .attribute_id,
+            model_id.map(|m| m.attribute_id).flatten(),
             model_year,
             include_not_publicly_available
         )
-        .fetch_all(&mut conn)
+        .fetch_all(&mut *conn)
         .await?;
 
         let current_decodings = decodings
@@ -463,7 +442,7 @@ pub async fn sp_vin_decode_core(
                 .filter_map(|x| x.id)
                 .collect::<Vec<_>>()
         )
-        .fetch_all(&mut conn)
+        .fetch_all(&mut *conn)
         .await?
         .into_iter()
         .flat_map(|patt| {
@@ -512,7 +491,7 @@ pub async fn sp_vin_decode_core(
             where
                 vsp.is_key = '0'"
         )
-        .fetch_all(&mut conn)
+        .fetch_all(&mut *conn)
         .await?
         .iter()
         .flat_map(|x| {
@@ -522,7 +501,7 @@ pub async fn sp_vin_decode_core(
                 .map(move |y| (x, y))
         })
         .filter(|(x, _y)| !relevant_decodings.contains(&x.element_id))
-        .for_each(|(x, y)| {
+        .for_each(|(x, _)| {
             decodings.push(DecodingItem {
                 decoding_id: Some(pass),
                 source: Some("Vehicle Specs".into()),
@@ -535,7 +514,6 @@ pub async fn sp_vin_decode_core(
                 element_id: x.element_id,
                 attribute_id: x.attribute_id,
                 value: Some("XXX".into()),
-                tobe_q_ced: y.tobe_q_ced,
             });
         });
     }
@@ -575,7 +553,7 @@ pub async fn sp_vin_decode_core(
             from
                 default_value dv
                 join element e on dv.element_id = e.id")
-            .fetch_all(&mut conn)
+            .fetch_all(&mut *conn)
             .await?
             .into_iter()
             .filter(|r| {
@@ -594,7 +572,6 @@ pub async fn sp_vin_decode_core(
                     element_id: r.element_id,
                     attribute_id: r.default_value,
                     value: r.value,
-                    tobe_q_ced: None
                 });
             });
     }

@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select id from wmi where wmi = $1 and ($2 or public_availability_date <= current_timestamp)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "c5631ca5e7a9d0ba9fb4cdf3d9b1017f7da5a8c7b592499e53acbfea1ad5925b"
+}

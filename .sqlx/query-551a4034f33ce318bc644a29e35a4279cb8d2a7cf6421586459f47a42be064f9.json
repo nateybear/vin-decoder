@@ -1,0 +1,87 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select\n                $1::integer as decoding_id,\n                'EngineModelPattern' as source,\n                coalesce(p.updated_on, p.created_on) as created_on,\n                50 as priority,\n                $2::integer as pattern_id,\n                $3 as keys,\n                $4::integer as vin_schema_id,\n                $5::integer as wmi_id,\n                p.element_id,\n                p.attribute_id,\n                'XXX' as value\n            from\n                engine_model em\n                join engine_model_pattern p on em.id = p.engine_model_id\n                join element e on p.element_id = e.id\n            where\n                em.name = $6",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "decoding_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "source",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "created_on",
+        "type_info": "Timestamp"
+      },
+      {
+        "ordinal": 3,
+        "name": "priority",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "pattern_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "keys",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "vin_schema_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 7,
+        "name": "wmi_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 8,
+        "name": "element_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 9,
+        "name": "attribute_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 10,
+        "name": "value",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4",
+        "Text",
+        "Int4",
+        "Int4",
+        "Text"
+      ]
+    },
+    "nullable": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      true,
+      true,
+      null
+    ]
+  },
+  "hash": "551a4034f33ce318bc644a29e35a4279cb8d2a7cf6421586459f47a42be064f9"
+}

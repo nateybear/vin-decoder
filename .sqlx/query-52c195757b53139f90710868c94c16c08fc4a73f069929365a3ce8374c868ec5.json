@@ -1,0 +1,84 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select\n            $1::integer as decoding_id,\n            'VehType' as source,\n            coalesce(w.updated_on, w.created_on) as created_on,\n            100 as priority,\n            NULL::integer as pattern_id,\n            upper($2) as keys,\n            NULL::integer as vin_schema_id,\n            w.id as wmi_id,\n            39 as element_id,\n            t.id as attribute_id,\n            upper(t.name) as value\n        from\n            wmi w\n            join vehicle_type t on t.id = w.vehicle_type_id\n        where\n            wmi = $2\n            and ($3 or w.public_availability_date <= current_timestamp)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "decoding_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "source",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "created_on",
+        "type_info": "Timestamp"
+      },
+      {
+        "ordinal": 3,
+        "name": "priority",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "pattern_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "keys",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "vin_schema_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 7,
+        "name": "wmi_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 8,
+        "name": "element_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 9,
+        "name": "attribute_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 10,
+        "name": "value",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Text",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      true,
+      null,
+      true,
+      null
+    ]
+  },
+  "hash": "52c195757b53139f90710868c94c16c08fc4a73f069929365a3ce8374c868ec5"
+}

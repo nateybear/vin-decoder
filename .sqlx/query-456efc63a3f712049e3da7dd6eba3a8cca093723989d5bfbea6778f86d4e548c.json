@@ -1,0 +1,56 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select distinct\n                vsp.is_key,\n                vsvp.schema_id,\n                vsp.v_spec_schema_pattern_id,\n                vsp.element_id,\n                vsp.attribute_id,\n                vsvp.id,\n                coalesce(vsp.updated_on, vsp.created_on) as changed_on\n            from vehicle_spec_pattern vsp\n                join v_spec_schema_pattern vsvp on vsvp.id = vsp.v_spec_schema_pattern_id\n            where\n                vsp.is_key = '0'",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "is_key",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "schema_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "v_spec_schema_pattern_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "element_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "attribute_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "changed_on",
+        "type_info": "Timestamp"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      null
+    ]
+  },
+  "hash": "456efc63a3f712049e3da7dd6eba3a8cca093723989d5bfbea6778f86d4e548c"
+}

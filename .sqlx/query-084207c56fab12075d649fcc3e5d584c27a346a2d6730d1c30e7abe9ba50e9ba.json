@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select\n            t.id,\n            upper(t.name) as name\n        from\n            wmi w\n            join manufacturer t on t.id = w.manufacturer_id\n        where\n            wmi = $1\n            and ($2 or w.public_availability_date <= current_timestamp)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      true,
+      null
+    ]
+  },
+  "hash": "084207c56fab12075d649fcc3e5d584c27a346a2d6730d1c30e7abe9ba50e9ba"
+}

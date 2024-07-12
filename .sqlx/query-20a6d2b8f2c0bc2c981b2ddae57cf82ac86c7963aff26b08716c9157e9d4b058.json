@@ -1,0 +1,44 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select\n                coalesce(dv.updated_on, dv.created_on) as created_on,\n                dv.element_id,\n                dv.default_value,\n                case when e.data_type = 'lookup' and dv.default_value = '0' then 'Not Applicable' else 'XXX' end as value,\n                dv.vehicle_type_id\n            from\n                default_value dv\n                join element e on dv.element_id = e.id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "created_on",
+        "type_info": "Timestamp"
+      },
+      {
+        "ordinal": 1,
+        "name": "element_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "default_value",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "value",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "vehicle_type_id",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null,
+      true,
+      true,
+      null,
+      true
+    ]
+  },
+  "hash": "20a6d2b8f2c0bc2c981b2ddae57cf82ac86c7963aff26b08716c9157e9d4b058"
+}

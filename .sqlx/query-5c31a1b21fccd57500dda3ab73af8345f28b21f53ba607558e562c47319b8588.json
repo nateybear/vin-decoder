@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select p.v_spec_schema_pattern_id, p.element_id, p.attribute_id\n            from vehicle_spec_pattern p\n            where\n                p.v_spec_schema_pattern_id = any($1)\n                and p.is_key = '1'",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "v_spec_schema_pattern_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "element_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "attribute_id",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4Array"
+      ]
+    },
+    "nullable": [
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "5c31a1b21fccd57500dda3ab73af8345f28b21f53ba607558e562c47319b8588"
+}

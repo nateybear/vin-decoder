@@ -1,0 +1,165 @@
+CREATE function [dbo].[fElementAttributeValue] ( @ElementId int, @AttributeId varchar(500)) RETURNS varchar(2000) AS
+
+ BEGIN
+
+ DECLARE @v varchar(2000) = @AttributeId
+
+         if @ElementId = 2 begin select @v = [Name] from [BatteryType] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 3 begin select @v = [Name] from [BedType] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 4 begin select @v = [Name] from [BodyCab] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 5 begin select @v = [Name] from [BodyStyle] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 10 begin select @v = [Name] from [DestinationMarket] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 15 begin select @v = [Name] from [DriveType] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 23 begin select @v = [Name] from [EntertainmentSystem] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 24 begin select @v = [Name] from [FuelType] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 25 begin select @v = [Name] from [GrossVehicleWeightRating] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 26 begin select @v = [Name] from [Make] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 27 begin select @v = [Name] from [Manufacturer] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 28 begin select @v = [Name] from [Model] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 36 begin select @v = [Name] from [Steering] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 37 begin select @v = [Name] from [Transmission] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 39 begin select @v = [Name] from [VehicleType] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 42 begin select @v = [Name] from [BrakeSystem] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 55 begin select @v = [Name] from [AirBagLocations] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 56 begin select @v = [Name] from [AirBagLocations] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 60 begin select @v = [Name] from [WheelBaseType] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 62 begin select @v = [Name] from [ValvetrainDesign] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 64 begin select @v = [Name] from [EngineConfiguration] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 65 begin select @v = [Name] from [AirBagLocFront] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 66 begin select @v = [Name] from [FuelType] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 67 begin select @v = [Name] from [FuelDeliveryType] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 69 begin select @v = [Name] from [AirBagLocKnee] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 72 begin select @v = [Name] from [EVDriveUnit] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 75 begin select @v = [Name] from [Country] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 78 begin select @v = [Name] from [Pretensioner] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 79 begin select @v = [Name] from [SeatBeltsAll] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 81 begin select @v = [Name] from [AdaptiveCruiseControl] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 86 begin select @v = [Name] from [ABS] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 87 begin select @v = [Name] from [AutoBrake] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 88 begin select @v = [Name] from [BlindSpotMonitoring] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 96 begin select @v = [Name] from [vNCSABodyType] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 97 begin select @v = [Name] from [vNCSAMake] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 98 begin select @v = [Name] from [vNCSAModel] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 99 begin select @v = [Name] from [ECS] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 100 begin select @v = [Name] from [TractionControl] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 101 begin select @v = [Name] from [ForwardCollisionWarning] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 102 begin select @v = [Name] from [LaneDepartureWarning] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 103 begin select @v = [Name] from [LaneKeepSystem] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 104 begin select @v = [Name] from [RearVisibilityCamera] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 105 begin select @v = [Name] from [ParkAssist] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 107 begin select @v = [Name] from [AirBagLocations] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 116 begin select @v = [Name] from [TrailerType] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 117 begin select @v = [Name] from [TrailerBodyType] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 122 begin select @v = [Name] from [CoolingType] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 126 begin select @v = [Name] from [ElectrificationLevel] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 127 begin select @v = [Name] from [ChargerLevel] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 135 begin select @v = [Name] from [Turbo] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 143 begin select @v = [Name] from [ErrorCode] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 145 begin select @v = [Name] from [AxleConfiguration] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 148 begin select @v = [Name] from [BusFloorConfigType] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 149 begin select @v = [Name] from [BusType] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 151 begin select @v = [Name] from [CustomMotorcycleType] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 152 begin select @v = [Name] from [MotorcycleSuspensionType] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 153 begin select @v = [Name] from [MotorcycleChassisType] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 168 begin select @v = [Name] from [TPMS] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 170 begin select @v = [Name] from [DynamicBrakeSupport] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 171 begin select @v = [Name] from [PedestrianAutomaticEmergencyBraking] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 172 begin select @v = [Name] from [AutoReverseSystem] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 173 begin select @v = [Name] from [AutomaticPedestrainAlertingSound] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 174 begin select @v = [Name] from [CAN_AACN] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 175 begin select @v = [Name] from [EDR] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 176 begin select @v = [Name] from [KeylessIgnition] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 177 begin select @v = [Name] from [DaytimeRunningLight] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 178 begin select @v = [Name] from [LowerBeamHeadlampLightSource] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 179 begin select @v = [Name] from [SemiautomaticHeadlampBeamSwitching] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 180 begin select @v = [Name] from [AdaptiveDrivingBeam] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 183 begin select @v = [Name] from [RearCrossTrafficAlert] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 184 begin select @v = [Name] from [GrossVehicleWeightRating] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 185 begin select @v = [Name] from [GrossVehicleWeightRating] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 190 begin select @v = [Name] from [GrossVehicleWeightRating] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 192 begin select @v = [Name] from [RearAutomaticEmergencyBraking] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 193 begin select @v = [Name] from [BlindSpotIntervention] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 194 begin select @v = [Name] from [LaneCenteringAssistance] where Id = @AttributeId ; return @v end
+
+ if @ElementId = 195 begin select @v = [Name] from [NonLandUse] where Id = @AttributeId ; return @v end
+
+
+
+        RETURN @v
+
+end

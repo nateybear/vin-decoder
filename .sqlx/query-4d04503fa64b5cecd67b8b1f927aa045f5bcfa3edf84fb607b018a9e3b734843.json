@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select\n                mk.id as attribute_id,\n                upper(mk.name) as value\n            from\n                make__model mm\n                join make mk on mm.make_id = mk.id\n            where\n                mm.model_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "attribute_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "value",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      true,
+      null
+    ]
+  },
+  "hash": "4d04503fa64b5cecd67b8b1f927aa045f5bcfa3edf84fb607b018a9e3b734843"
+}

@@ -1,0 +1,53 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        select\n            group_name,\n            name as variable,\n            id as element_id,\n            code,\n            data_type,\n            decode\n        from \n            element\n        where\n            coalesce(decode, '') <> ''\n            and ($1 or (coalesce($1, false) = false and id is not null))\n            and ($2 or coalesce(is_private, 0) = 0)\n        order by\n            case coalesce(group_name, '')\n                when '' then 0\n                when 'General' then 1\n\t\twhen 'Exterior / Body' then 2\n\t\twhen 'Exterior / Dimension' then 3\n\t\twhen 'Exterior / Truck' then 4\n\t\twhen 'Exterior / Trailer' then 5\n\t\twhen 'Exterior / Wheel tire' then 6\n\t\twhen 'Interior' then 7\n\t\twhen 'Interior / Seat' then 8\n\t\twhen 'Mechanical / Transmission' then 9\n\t\twhen 'Mechanical / Drivetrain' then 10\n\t\twhen 'Mechanical / Brake' then 11\n\t\twhen 'Mechanical / Battery' then 12\n\t\twhen 'Mechanical / Battery / Charger' then 13\n\t\twhen 'Engine' then 14\n\t\twhen 'Passive Safety System' then 15\n\t\twhen 'Passive Safety System / Air Bag Location' then 16\n\t\twhen 'Active Safety System' then 17\n\t\twhen 'Internal' then 18\n\t\telse 99 \n            end,\n            id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "group_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "variable",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "element_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "code",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "data_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "decode",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Bool",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "68d93826dae75d8a18181b54886695bfb939fb8a4f36b57919a47d4d4455714b"
+}

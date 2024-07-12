@@ -1,0 +1,32 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select distinct sp.id, s.tobe_q_ced\n         from vehicle_spec_schema s\n            join v_spec_schema_pattern sp on s.id = sp.schema_id\n            join vehicle_spec_pattern p on sp.id = p.v_spec_schema_pattern_id\n            join vehicle_spec_schema__model vssm on vssm.vehicle_spec_schema_id = s.id\n            left join vehicle_spec_schema__year vssy on vssy.vehicle_spec_schema_id = s.id\n            join wmi__make wm on wm.make_id = s.make_id\n            join wmi on wmi.id = wm.wmi_id\n            where\n                wmi.wmi = $1\n                and s.vehicle_type_id = $2\n                and vssm.model_id = $3\n                and (vssy.year = $4 or vssy.id is null)\n                and p.is_key = '1'\n                and ($5 or (coalesce(s.tobe_q_ced, true)))",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "tobe_q_ced",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      true,
+      true
+    ]
+  },
+  "hash": "548c22197d08763d4aa79e2b9fd97290806e0c54c7ce37de5fa4ea8ec83c9324"
+}
