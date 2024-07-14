@@ -40,7 +40,10 @@ async fn build_pool() -> Result<PgPool> {
         .context("Failed to parse POOL_SIZE environment variable")?;
     let options = PgConnectOptions::new(); // read config from environment!
 
-    info!("Connecting to database with {} connections and configuration:\n\n{:?}\n", pool_size, options);
+    info!(
+        "Connecting to database with {} connections and configuration:\n\n{:?}\n",
+        pool_size, options
+    );
 
     let pool = PgPoolOptions::new()
         .max_connections(pool_size)

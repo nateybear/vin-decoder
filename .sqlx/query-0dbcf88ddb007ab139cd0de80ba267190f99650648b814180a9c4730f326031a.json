@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "select\n            $1::integer as decoding_id,\n            'Pattern' as source,\n            coalesce(p.updated_on, p.created_on) as created_on,\n            wvs.year_from as priority,\n            p.id as pattern_id,\n            upper(p.keys) as keys,\n            p.vin_schema_id,\n            wvs.wmi_id,\n            p.element_id,\n            p.attribute_id,\n            'XXX' as value\n        from\n            pattern p\n            join element e on p.element_id = e.id\n            join vin_schema vs on p.vin_schema_id = vs.id\n            join wmi__vin_schema wvs on \n                vs.id = wvs.vin_schema_id\n                and ($6::integer is null or $6 between wvs.year_from and coalesce(wvs.year_to, 2999))\n            join wmi w on wvs.wmi_id = w.id and w.wmi = $2\n        where\n            $3 similar to concat(replace(p.keys, '*', '_'), '%')\n            and not p.element_id in (26, 27, 29, 39)\n            and e.decode is not null\n            and (coalesce(e.is_private, 0) = 0 or $4)\n            and ($5 or w.public_availability_date <= current_timestamp)\n            and ($5 or coalesce(vs.tobe_q_ced, true))",
+  "query": "select\n            $1::integer as decoding_id,\n            'Pattern' as source,\n            coalesce(updated_on, created_on) as created_on,\n            year_from as priority,\n            id as pattern_id,\n            upper(keys) as keys,\n            vin_schema_id,\n            wmi_id,\n            element_id,\n            attribute_id,\n            'XXX' as value\n        from\n            ( select p.*, wvs.wmi_id, wvs.year_from from\n                pattern p\n                join element e on p.element_id = e.id\n                join vin_schema vs on p.vin_schema_id = vs.id\n                join wmi__vin_schema wvs on \n                    vs.id = wvs.vin_schema_id\n                    and ($5::integer is null or $5 between wvs.year_from and coalesce(wvs.year_to, 2999))\n                join wmi w on wvs.wmi_id = w.id and w.wmi = $2\n            where\n                not p.element_id in (26, 27, 29, 39)\n                and e.decode is not null\n                and (coalesce(e.is_private, 0) = 0 or $3)\n                and ($4 or w.public_availability_date <= current_timestamp)\n                and ($4 or coalesce(vs.tobe_q_ced, true))\n            ) p",
   "describe": {
     "columns": [
       {
@@ -63,7 +63,6 @@
       "Left": [
         "Int4",
         "Text",
-        "Text",
         "Bool",
         "Bool",
         "Int4"
@@ -83,5 +82,5 @@
       null
     ]
   },
-  "hash": "7c7e280558976c7bc6239b0cd7539688d78f62748e6fbb6d40e85eacd7967710"
+  "hash": "0dbcf88ddb007ab139cd0de80ba267190f99650648b814180a9c4730f326031a"
 }

@@ -1,0 +1,17 @@
+services:
+  db:
+    image: ghcr.io/nateybear/vin-decoder:database
+    volumes:
+      - vin-decoder-data:/var/lib/postgresql/data
+      - ./postgresql.conf:/var/lib/postgresql/data/postgresql.conf
+    
+  server:
+    build: .
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+
+volumes:
+  vin-decoder-data:
+    external: true

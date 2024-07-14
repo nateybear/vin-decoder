@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "select distinct\n                vsp.is_key,\n                vsvp.schema_id,\n                vsp.v_spec_schema_pattern_id,\n                vsp.element_id,\n                vsp.attribute_id,\n                vsvp.id,\n                coalesce(vsp.updated_on, vsp.created_on) as changed_on\n            from vehicle_spec_pattern vsp\n                join v_spec_schema_pattern vsvp on vsvp.id = vsp.v_spec_schema_pattern_id\n            where\n                vsp.is_key = '0'",
+  "query": "select * from all_schema_patterns",
   "describe": {
     "columns": [
       {
@@ -49,8 +49,8 @@
       true,
       true,
       true,
-      null
+      true
     ]
   },
-  "hash": "456efc63a3f712049e3da7dd6eba3a8cca093723989d5bfbea6778f86d4e548c"
+  "hash": "87fa4c9ee36fb5898dbd845a6c78b33f6b3e970baa56370fe0ad4d522a55c8c8"
 }

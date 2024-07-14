@@ -48,41 +48,55 @@ pub async fn sp_vin_decode_core(
         };
     }
 
-    insert_decodings!(
+    query_as!(
+        DecodingItem,
         "select
             $1::integer as decoding_id,
             'Pattern' as source,
-            coalesce(p.updated_on, p.created_on) as created_on,
-            wvs.year_from as priority,
-            p.id as pattern_id,
-            upper(p.keys) as keys,
-            p.vin_schema_id,
-            wvs.wmi_id,
-            p.element_id,
-            p.attribute_id,
+            coalesce(updated_on, created_on) as created_on,
+            year_from as priority,
+            id as pattern_id,
+            upper(keys) as keys,
+            vin_schema_id,
+            wmi_id,
+            element_id,
+            attribute_id,
             'XXX' as value
         from
-            pattern p
-            join element e on p.element_id = e.id
-            join vin_schema vs on p.vin_schema_id = vs.id
-            join wmi__vin_schema wvs on 
-                vs.id = wvs.vin_schema_id
-                and ($6::integer is null or $6 between wvs.year_from and coalesce(wvs.year_to, 2999))
-            join wmi w on wvs.wmi_id = w.id and w.wmi = $2
-        where
-            $3 similar to concat(replace(p.keys, '*', '_'), '%')
-            and not p.element_id in (26, 27, 29, 39)
-            and e.decode is not null
-            and (coalesce(e.is_private, 0) = 0 or $4)
-            and ($5 or w.public_availability_date <= current_timestamp)
-            and ($5 or coalesce(vs.tobe_q_ced, true))",
+            ( select p.*, wvs.wmi_id, wvs.year_from from
+                pattern p
+                join element e on p.element_id = e.id
+                join vin_schema vs on p.vin_schema_id = vs.id
+                join wmi__vin_schema wvs on 
+                    vs.id = wvs.vin_schema_id
+                    and ($5::integer is null or $5 between wvs.year_from and coalesce(wvs.year_to, 2999))
+                join wmi w on wvs.wmi_id = w.id and w.wmi = $2
+            where
+                not p.element_id in (26, 27, 29, 39)
+                and e.decode is not null
+                and (coalesce(e.is_private, 0) = 0 or $3)
+                and ($4 or w.public_availability_date <= current_timestamp)
+                and ($4 or coalesce(vs.tobe_q_ced, true))
+            ) p",
         pass,
         wmi,
-        keys,
         include_private,
         include_not_publicly_available,
         model_year
-    );
+    ).fetch_all(&mut *conn)
+    .await?
+    .into_iter()
+    .filter(|d| {
+        d.keys.as_ref().map_or(false, |k| {
+            k.split('|').any(|k| {
+                Regex::new(&format!("^{}", k.replace('*', ".")))
+                .ok()
+                .and_then(|r| r.find(&keys))
+                .is_some()
+            })
+        })
+    })
+    .for_each(|d| decodings.push(d));
 
     /*
      *
@@ -216,7 +230,8 @@ pub async fn sp_vin_decode_core(
     }
 
     let formula_keys = Regex::new(r"\d")?.replace_all(&keys, "#").to_string();
-    insert_decodings!(
+    query_as!(
+        DecodingItem,
         "select
             $1::integer as decoding_id,
             'Formula Pattern' as source,
@@ -230,30 +245,43 @@ pub async fn sp_vin_decode_core(
             p.attribute_id,
             substring($2, position('#' in p.keys), ((length(p.keys) - position('#' in reverse(p.keys)) + 1) - (position('#' in p.keys)) + 1))::text as value
         from
-            pattern p
-            join element e on p.element_id = e.id
-        where
-            p.vin_schema_id in
-            ( select wvs.vin_schema_id
-                from 
-                    wmi w
-                    join wmi__vin_schema wvs 
-                        on w.id = wvs.wmi_id
-                        and ($3::integer is null or $3 between wvs.year_from and coalesce(wvs.year_to, 2999))
-                where
-                    w.wmi = $4 and ($3 is null or $3 between wvs.year_from and coalesce(wvs.year_to, 2999))
-                    and ($5 or w.public_availability_date <= current_timestamp)
-            )
-            and position('#' in p.keys) > 0
-            and p.element_id not in (26, 27, 29, 39)
-            and $6 similar to concat(replace(p.keys, '*', '_'), '%')",
+            ( select p.* from
+                pattern p
+                join element e on p.element_id = e.id
+            where
+                p.vin_schema_id in
+                ( select wvs.vin_schema_id
+                    from 
+                        wmi w
+                        join wmi__vin_schema wvs 
+                            on w.id = wvs.wmi_id
+                            and ($3::integer is null or $3 between wvs.year_from and coalesce(wvs.year_to, 2999))
+                    where
+                        w.wmi = $4 and ($3 is null or $3 between wvs.year_from and coalesce(wvs.year_to, 2999))
+                        and ($5 or w.public_availability_date <= current_timestamp)
+                )
+                and position('#' in p.keys) > 0
+                and p.element_id not in (26, 27, 29, 39)
+            ) p",
         pass,
         keys,
         model_year,
         wmi,
-        include_not_publicly_available,
-        &formula_keys
-    );
+        include_not_publicly_available
+    ).fetch_all(&mut *conn)
+    .await?
+    .into_iter()
+    .filter(|d| {
+        d.keys.as_ref().map_or(false, |k| {
+            k.split('|').any(|k| {
+                Regex::new(&format!("^{}", k.replace('*', ".")))
+                .ok()
+                .and_then(|r| r.find(&formula_keys))
+                .is_some()
+            })
+        })
+    })
+    .for_each(|d| decodings.push(d));
 
     /*
      *
@@ -464,21 +492,12 @@ pub async fn sp_vin_decode_core(
                 }
                 _ => None,
             })
+            .flatten()
             .collect::<Vec<_>>();
 
         query!(
-            "select distinct
-                vsp.is_key,
-                vsvp.schema_id,
-                vsp.v_spec_schema_pattern_id,
-                vsp.element_id,
-                vsp.attribute_id,
-                vsvp.id,
-                coalesce(vsp.updated_on, vsp.created_on) as changed_on
-            from vehicle_spec_pattern vsp
-                join v_spec_schema_pattern vsvp on vsvp.id = vsp.v_spec_schema_pattern_id
-            where
-                vsp.is_key = '0'"
+            "select * from all_schema_patterns where element_id = any($1)",
+            &relevant_decodings
         )
         .fetch_all(&mut *conn)
         .await?
@@ -488,8 +507,8 @@ pub async fn sp_vin_decode_core(
                 .iter()
                 .filter(|y| x.id == y.id)
                 .map(move |y| (x, y))
+                .collect::<Vec<_>>()
         })
-        .filter(|(x, _y)| !relevant_decodings.contains(&x.element_id))
         .for_each(|(x, _)| {
             decodings.push(DecodingItem {
                 decoding_id: Some(pass),
