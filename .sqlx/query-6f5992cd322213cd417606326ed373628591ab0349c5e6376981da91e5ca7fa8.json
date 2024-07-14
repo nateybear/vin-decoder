@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "select * from all_schema_patterns",
+  "query": "select * from all_schema_patterns where element_id = any($1)",
   "describe": {
     "columns": [
       {
@@ -40,7 +40,9 @@
       }
     ],
     "parameters": {
-      "Left": []
+      "Left": [
+        "Int4Array"
+      ]
     },
     "nullable": [
       true,
@@ -52,5 +54,5 @@
       true
     ]
   },
-  "hash": "87fa4c9ee36fb5898dbd845a6c78b33f6b3e970baa56370fe0ad4d522a55c8c8"
+  "hash": "6f5992cd322213cd417606326ed373628591ab0349c5e6376981da91e5ca7fa8"
 }
